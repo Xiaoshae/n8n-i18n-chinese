@@ -39,39 +39,39 @@ function retry(fn, maxRetry = 5, interval = 1000) {
 }
 
 async function doTranslate(message, language) {
+    const requestBody = {
+        "model": process.env.OPENAI_MODEL,
+        "messages": [
+            {
+                "role": "system",
+                "content": `
+你是n8n项目的翻译助手，你的任务是将英文文本翻译成指定的语言。请将以下英文文本翻译成 ${language}
+## 限制：
+- 仅输出翻译后的内容
+- 不要处理 {} 里面包裹的变量名称
+`
+            },
+            {
+                "role": "user",
+                "content": message
+            }
+        ],
+    };
+
+    // DeepSeek 思考模式支持
+    if (process.env.REASONING_EFFORT) {
+        requestBody.reasoning_effort = process.env.REASONING_EFFORT;
+    }
+    if ((process.env.ENABLE_THINKING || "true") === "true") {
+        requestBody.thinking = {type: "enabled"};
+    }
+
     const response = await retry(() => fetch(process.env.OPENAI_API_BASE + "/chat/completions", {
         method: "POST",
         headers: {
             "Authorization": "Bearer " + process.env.OPENAI_API_KEY,
             "Content-Type": "application/json"
         },
-        const requestBody = {
-            "model": process.env.OPENAI_MODEL,
-            "messages": [
-                {
-                    "role": "system",
-                    "content": `
-你是n8n项目的翻译助手，你的任务是将英文文本翻译成指定的语言。请将以下英文文本翻译成 ${language}
-## 限制：
-- 仅输出翻译后的内容
-- 不要处理 {} 里面包裹的变量名称
-`
-                },
-                {
-                    "role": "user",
-                    "content": message
-                }
-            ],
-        };
-
-        // DeepSeek 思考模式支持
-        if (process.env.REASONING_EFFORT) {
-            requestBody.reasoning_effort = process.env.REASONING_EFFORT;
-        }
-        if ((process.env.ENABLE_THINKING || "true") === "true") {
-            requestBody.thinking = {type: "enabled"};
-        }
-
         body: JSON.stringify(requestBody),
     }));
 
