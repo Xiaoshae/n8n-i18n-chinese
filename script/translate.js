@@ -45,7 +45,7 @@ async function doTranslate(message, language) {
             "Authorization": "Bearer " + process.env.OPENAI_API_KEY,
             "Content-Type": "application/json"
         },
-        body: JSON.stringify(			{
+        const requestBody = {
             "model": process.env.OPENAI_MODEL,
             "messages": [
                 {
@@ -62,7 +62,17 @@ async function doTranslate(message, language) {
                     "content": message
                 }
             ],
-        }),
+        };
+
+        // DeepSeek 思考模式支持
+        if (process.env.REASONING_EFFORT) {
+            requestBody.reasoning_effort = process.env.REASONING_EFFORT;
+        }
+        if ((process.env.ENABLE_THINKING || "true") === "true") {
+            requestBody.thinking = {type: "enabled"};
+        }
+
+        body: JSON.stringify(requestBody),
     }));
 
     // 请求过多，等待重试
@@ -158,7 +168,8 @@ function collectMessages(oldSourceLanguages, newSourceLanguages, targetLanguages
 async function run(){
     const oldEnLanguages = require("./en.json");
     const newEnNodesLanguages = fs.existsSync("./en-nodes.json") ? require("./en-nodes.json") : {};
-    let newEnLanguages = await fetch("https://raw.githubusercontent.com/n8n-io/n8n/master/packages/frontend/%40n8n/i18n/src/locales/en.json")
+    const n8nVersion = process.env.N8N_VERSION || "master";
+    let newEnLanguages = await fetch(`https://raw.githubusercontent.com/n8n-io/n8n/${n8nVersion}/packages/frontend/%40n8n/i18n/src/locales/en.json`)
         .then(res => res.json())
 
     for (const targetLanguage of targetLanguages) {
