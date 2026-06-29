@@ -99,8 +99,16 @@ jobs:
       run: tar -czvf editor-ui.tar.gz dist
       working-directory: ${{ steps.editorui_dir.outputs.dir }}
 
+    - name: Sanitize version name for artifact
+      id: artifact_name
+      run: |
+        SAFE_NAME="editor-ui-${{ inputs.n8n_version }}"
+        SAFE_NAME="${SAFE_NAME//\//-}"
+        echo "name=$SAFE_NAME" >> $GITHUB_OUTPUT
+        echo "Sanitized artifact name: $SAFE_NAME"
+
     - name: Upload editor-ui artifact
       uses: actions/upload-artifact@v4
       with:
-        name: editor-ui-${{ inputs.n8n_version }}
+        name: ${{ steps.artifact_name.outputs.name }}
         path: ${{ steps.editorui_dir.outputs.dir }}/editor-ui.tar.gz
